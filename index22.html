@@ -1,0 +1,133 @@
+import React, { useState, useMemo } from 'react';
+import { 
+  Home, 
+  Users, 
+  Wallet, 
+  CheckCircle, 
+  Clock, 
+  AlertCircle, 
+  Plus, 
+  TrendingUp, 
+  ShieldCheck 
+} from 'lucide-react';
+
+const initialTenants = [
+  { id: 1, name: 'أحمد محمد', property: 'شقة 101 - الرياض', rent: 2500, status: 'pending', dueDate: '2026-06-25' },
+  { id: 2, name: 'سارة خالد', property: 'فيلا 4 - جدة', rent: 5000, status: 'paid', dueDate: '2026-06-15' },
+  { id: 3, name: 'عبدالله علي', property: 'مكتب 22 - الدمام', rent: 3200, status: 'late', dueDate: '2026-06-01' },
+  { id: 4, name: 'منى فهد', property: 'شقة 205 - الرياض', rent: 2800, status: 'pending', dueDate: '2026-06-28' },
+];
+
+export default function RentalDashboard() {
+  const [tenants, setTenants] = useState(initialTenants);
+
+  const handlePay = (id) => {
+    setTenants(prev => prev.map(t => 
+      t.id === id ? { ...t, status: 'paid' } : t
+    ));
+  };
+
+  const stats = useMemo(() => {
+    const total = tenants.reduce((acc, curr) => acc + curr.rent, 0);
+    const paid = tenants.filter(t => t.status === 'paid').reduce((acc, curr) => acc + curr.rent, 0);
+    const pending = tenants.filter(t => t.status !== 'paid').reduce((acc, curr) => acc + curr.rent, 0);
+    return { total, paid, pending };
+  }, [tenants]);
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8" dir="rtl">
+      <div className="max-w-6xl mx-auto">
+        
+        {/* Header Section */}
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">نظام إدارة الإيجارات</h1>
+          <p className="text-gray-500 mt-2">لوحة تحكم متابعة التحصيلات العقارية</p>
+        </header>
+
+        {/* Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <StatCard title="إجمالي الدخل المتوقع" value={`${stats.total} ر.س`} icon={<Wallet className="text-blue-600" />} color="bg-blue-100" />
+          <StatCard title="المبالغ المحصلة" value={`${stats.paid} ر.س`} icon={<CheckCircle className="text-green-600" />} color="bg-green-100" />
+          <StatCard title="المتأخرات / معلق" value={`${stats.pending} ر.س`} icon={<AlertCircle className="text-orange-600" />} color="bg-orange-100" />
+        </div>
+
+        {/* Table Section */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h2 className="font-bold text-lg text-gray-700">قائمة المستأجرين</h2>
+            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors">
+              <Plus size={18} /> إضافة مستأجر جديد
+            </button>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-right">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="p-4 font-semibold text-gray-600">المستأجر</th>
+                  <th className="p-4 font-semibold text-gray-600">العقار</th>
+                  <th className="p-4 font-semibold text-gray-600">المبلغ</th>
+                  <th className="p-4 font-semibold text-gray-600">موعد الاستحقاق</th>
+                  <th className="p-4 font-semibold text-gray-600">الحالة</th>
+                  <th className="p-4 font-semibold text-gray-600">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tenants.map(tenant => (
+                  <tr key={tenant.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="p-4 font-medium">{tenant.name}</td>
+                    <td className="p-4 text-gray-600">{tenant.property}</td>
+                    <td className="p-4 font-bold">{tenant.rent} ر.س</td>
+                    <td className="p-4 text-gray-500">{tenant.dueDate}</td>
+                    <td className="p-4">
+                      <StatusBadge status={tenant.status} />
+                    </td>
+                    <td className="p-4">
+                      {tenant.status !== 'paid' && (
+                        <button 
+                          onClick={() => handlePay(tenant.id)}
+                          className="text-sm bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-200 hover:bg-green-100"
+                        >
+                          تأكيد السداد
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ title, value, icon, color }) {
+  return (
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+      <div className={`p-3 rounded-full ${color}`}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">{title}</p>
+        <p className="text-xl font-bold text-gray-800">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const styles = {
+    paid: 'bg-green-100 text-green-700',
+    pending: 'bg-blue-100 text-blue-700',
+    late: 'bg-red-100 text-red-700'
+  };
+  const labels = { paid: 'تم الدفع', pending: 'معلق', late: 'متأخر' };
+  
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
+      {labels[status]}
+    </span>
+  );
+}
